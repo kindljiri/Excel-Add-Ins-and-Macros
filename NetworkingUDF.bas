@@ -40,14 +40,14 @@ Function Ip2Bin(IP As Variant) As String
 End Function
 
 'Bin2Ip(BinaryIP)
-'Takes 32 bit number and return coresponding IP
+'Takes 32 bit number and return coresponding IP (4 decimal numbers delimited by dot)
 Function Bin2Ip(BinIP As Variant) As Variant
     IPOctets = Array(Bin2Dec(Left(BinIP, 8)), Bin2Dec(Mid(BinIP, 9, 8)), Bin2Dec(Mid(BinIP, 17, 8)), Bin2Dec(Right(BinIP, 8)))
     Bin2Ip = Join(IPOctets, ".")
 End Function
 
 'isValidIP(IP)
-'Verify if the given IP is Valid IP 4 decimal numbers in range 0-255 separated by dot
+'Returns True if the given IP is Valid IP. 4 decimal numbers in range 0-255 separated by dot
 Function isValidIP(IP As Variant) As Boolean
   isValidIP = True
   IPOctets = Split(IP, ".")
@@ -63,7 +63,7 @@ Function isValidIP(IP As Variant) As Boolean
 End Function
 
 'isValidMask(Mask)
-'Verify if given IP is valid Mask. Valid IP which in Binary is string of consecutive 1s folowed by consecutive 0s
+'Returns True if given IP is valid Mask. Valid IP which in Binary is string of consecutive 1s folowed by consecutive 0s
 Function isValidMask(Mask As Variant) As Variant
   isValidMask = True
   If isValidIP(Mask) Then
@@ -82,7 +82,7 @@ Function isValidMask(Mask As Variant) As Variant
 End Function
 
 'isValidCIDR(CIDR)
-'Verify if input is valid CIDR notation IP/Mask where ex: 10.0.0.0/8
+'Returns True if input is valid CIDR notation IP/Mask where ex: 10.0.0.0/8
 Function isValidCIDR(CIDR As Variant) As Variant
    isValidCIDR = True
    ip_and_mask = Split(CIDR, "/")
@@ -95,6 +95,16 @@ Function isValidCIDR(CIDR As Variant) As Variant
    Else
      isValidCIDR = False
    End If
+End Function
+
+'isPrivate(IP)
+'Returns True if IP is in private range
+Function isPrivate(IP As Variant) As Variant
+    isPrivate = False
+    Octets = Split(IP, ".")
+    If (Octets(0) = 10) Or (Octets(0) = 192 And Octets(1) = 168) Or (Octets(0) = 172 And Octets(1) > 15 And Octets(1) < 32) Then
+      isPrivate = True
+    End If
 End Function
 
 'ReverseIP(IP)
@@ -161,6 +171,36 @@ Function broadcastIP(IP As Variant, Mask As Variant) As Variant
   End If
 End Function
 
+'MinHost(IP, Mask)
+'Returns first host in given network
+Function MinHost(IP As Variant, Mask As Variant) As Variant
+    BinMask = Ip2Bin(Mask)
+    MaskLen = InStr(BinMask, "0") - 1
+    If MaskLen < 31 Then
+      netIP = networkIP(IP, Mask)
+      BinNetIP = Ip2Bin(netIP)
+      BinMinHost = Left(BinNetIP, 31) & "1"
+      MinHost = Bin2Ip(BinMinHost)
+    Else
+      MinHost = "No host in given network"
+    End If
+End Function
+
+'MaxHost(IP, Mask)
+'Returns last host in given network
+Function MaxHost(IP As Variant, Mask As Variant) As Variant
+    BinMask = Ip2Bin(Mask)
+    MaskLen = InStr(BinMask, "0") - 1
+    If MaskLen < 31 Then
+      bcastIP = broadcastIP(IP, Mask)
+      BinBroadcastIP = Ip2Bin(bcastIP)
+      BinMaxHost = Left(BinBroadcastIP, 31) & "0"
+      MaxHost = Bin2Ip(BinMaxHost)
+    Else
+      MaxHost = "No host in given network"
+    End If
+End Function
+
 'CIDR(IP, Mask)
 'Returns IP and Mask in CIDR Notation. Ex: 10.0.0.0/8
 Function CIDR(IP As Variant, Mask As Variant) As Variant
@@ -184,36 +224,6 @@ Function CIDR(IP As Variant, Mask As Variant) As Variant
   End If
 End Function
 
-'MinHost(IP, Mask)
-'Returns first host in given network
-Function MinHost(IP As Variant, Mask As Variant) As Variant
-    netIP = networkIP(IP, Mask)
-    BinNetIP = Ip2Bin(netIP)
-    BinMinHost = Left(BinNetIP, 31) & "1"
-    MinHost = Bin2Ip(BinMinHost)
-End Function
-
-'MaxHost(IP, Mask)
-'Returns last host in given network
-Function MaxHost(IP As Variant, Mask As Variant) As Variant
-    bcastIP = broadcastIP(IP, Mask)
-    BinBroadcastIP = Ip2Bin(bcastIP)
-    BinMaxHost = Left(BinBroadcastIP, 31) & "0"
-    MaxHost = Bin2Ip(BinMaxHost)
-End Function
-
-'Hostname(FQDN)
-'Return hostname of given FQDN
-Function Hostname(FQDN As Variant) As Variant
-    Hostname = Left(FQDN, InStr(FQDN, ".") - 1)
-End Function
-
-'Domain(FQDN)
-'Returns domain of given FQDN
-Function Domain(FQDN As Variant) As Variant
-    Domain = Right(FQDN, (Len(FQDN) - InStr(FQDN, ".")))
-End Function
-
 'CIDR2Mask(CIDR)
 'Returns the Mask coresponding to mask in CIDR Notation. Ex: 10.0.0.0/8 -> 255.0.0.0
 Function CIDR2Mask(CIDR As Variant) As Variant
@@ -229,4 +239,16 @@ Function CIDR2Mask(CIDR As Variant) As Variant
       BinMask = String(MaskLen, "1") & String(32 - MaskLen, "0")
       CIDR2Mask = Bin2Ip(BinMask)
     End If
+End Function
+
+'Hostname(FQDN)
+'Return hostname of given FQDN
+Function Hostname(FQDN As Variant) As Variant
+    Hostname = Left(FQDN, InStr(FQDN, ".") - 1)
+End Function
+
+'Domain(FQDN)
+'Returns domain of given FQDN
+Function Domain(FQDN As Variant) As Variant
+    Domain = Right(FQDN, (Len(FQDN) - InStr(FQDN, ".")))
 End Function
