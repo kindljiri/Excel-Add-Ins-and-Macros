@@ -107,6 +107,35 @@ Function isPrivate(IP As Variant) As Variant
     End If
 End Function
 
+'isValidHostname(IP)
+'Returns True if hostname is valid as per rfc1123
+Function isValidHostname(hostname As Variant) As Variant
+
+isValidHostname = True
+Dim Counter As Integer
+
+For Counter = 1 To Len(hostname)
+    AsciiCode = Asc(Mid(hostname, Counter, 1))
+    'A-Z 65-90
+    'a-z 97-122
+    '0-9 48-57
+    '- 45
+    If (AsciiCode < 45 Or AsciiCode > 122) Then
+        isValidHostname = False
+    End If
+    If (AsciiCode > 45 And AsciiCode < 48) Then
+        isValidHostname = False
+    End If
+    If (AsciiCode > 57 And AsciiCode < 65) Then
+        isValidHostname = False
+    End If
+    If (AsciiCode > 90 And AsciiCode < 97) Then
+        isValidHostname = False
+    End If
+Next
+
+End Function
+
 'ReverseIP(IP)
 'Returns reverse IP. Ex: 140.255.15.10 -> 10.15.255.140
 Function ReverseIP(IP As Variant) As Variant
